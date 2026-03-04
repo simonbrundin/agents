@@ -54,12 +54,20 @@ func githubWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Simple HTTP call to a queue push endpoint (if present)
+	// Enqueue job to Redis stream using pushJob helper
 	enqueueURL := os.Getenv("ENQUEUE_URL")
 	if enqueueURL != "" {
+		// If ENQUEUE_URL is provided, call it (useful for test/mocks)
 		payload := map[string]interface{}{"repo": ev.Repository.FullName, "issue": ev.Issue}
 		b, _ := json.Marshal(payload)
 		http.Post(enqueueURL, "application/json", bytes.NewReader(b))
+	} else {
+		// Fallback to direct Redis push (REDIS_ADDR env var)
+		payload := map[string]interface{}{"repo": ev.Repository.FullName, "issue": ev.Issue.Number}
+		p, _ := json.Marshal(payload)
+		if err := pushJob(r.Context(), string(p)); err != nil {
+			log.Printf("failed to push job to redis: %v", err)
+		}
 	}
 
 	w.WriteHeader(200)
