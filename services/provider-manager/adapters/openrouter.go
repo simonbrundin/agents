@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -17,7 +18,7 @@ func callOpenRouterRaw(ctx context.Context, prompt string, model string) (string
 		apiURL = "https://api.openrouter.ai/v1/chat/completions"
 	}
 	if apiKey == "" {
-		return "", ErrNoAPIKey{}
+		return "", fmt.Errorf("OPENROUTER_API_KEY not set")
 	}
 	body := map[string]interface{}{
 		"model":    model,

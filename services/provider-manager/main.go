@@ -51,8 +51,19 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(status)
-	w.Write(respBody)
+	// Parse OpenRouter response to extract text
+	text, perr := extractOpenRouterText(respBody)
+	if perr != nil {
+		log.Printf("failed to parse openrouter response: %v", perr)
+		// fallback: return raw
+		w.WriteHeader(status)
+		w.Write(respBody)
+		return
+	}
+
+	out := map[string]interface{}{"text": text, "provider": "openrouter"}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(out)
 }
 
 func callOpenRouter(ctx context.Context, req GenRequest) ([]byte, int, error) {
