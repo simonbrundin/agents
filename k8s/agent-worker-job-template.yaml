@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: agent-worker-job
+  namespace: agents-dev
+spec:
+  template:
+    metadata:
+      labels:
+        app: agent-worker
+    spec:
+      serviceAccountName: agent-worker-sa
+      containers:
+        - name: worker
+          image: ghcr.io/simonbrundin/agents/worker:dev
+          env:
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-creds
+                  key: token
+            - name: REDIS_URL
+              value: "REDIS_URL_PLACEHOLDER"
+            - name: POSTGRES_URL
+              value: "POSTGRES_URL_PLACEHOLDER"
+      restartPolicy: Never
+  backoffLimit: 2

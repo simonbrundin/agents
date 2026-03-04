@@ -1,0 +1,5 @@
+api:
+  ephemeral-preview:
+    description: "Conventions for creating, naming, testing, and tearing down ephemeral preview environments for pull requests"
+  issue-metadata:
+    description: "How to label and document issues created or suggested by automated agents"
