@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,7 +10,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/alicebob/miniredis/v2"
 	"github.com/go-redis/redis/v8"
 )
 
