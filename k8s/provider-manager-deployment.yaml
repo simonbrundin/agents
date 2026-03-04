@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: provider-manager
+  namespace: agents-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: provider-manager
+  template:
+    metadata:
+      labels:
+        app: provider-manager
+    spec:
+      containers:
+        - name: provider-manager
+          image: ghcr.io/simonbrundin/agents/provider-manager:latest
+          env:
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openrouter-creds
+                  key: OPENROUTER_API_KEY

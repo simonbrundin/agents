@@ -1,0 +1,17 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: agent-worker-scaledobject
+  namespace: agents-dev
+spec:
+  scaleTargetRef:
+    name: agent-worker
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  triggers:
+    - type: redis
+      metadata:
+        addressFromEnv: REDIS_ADDR
+        stream: agent-jobs
+        consumerGroup: agents
+        pendingEntriesCount: "1"

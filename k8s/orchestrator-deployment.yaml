@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-orchestrator
+  namespace: agents-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent-orchestrator
+  template:
+    metadata:
+      labels:
+        app: agent-orchestrator
+    spec:
+      serviceAccountName: agent-orchestrator-sa
+      containers:
+        - name: orchestrator
+          image: ghcr.io/simonbrundin/agents/orchestrator:latest
+          env:
+            - name: REDIS_ADDR
+              valueFrom:
+                secretKeyRef:
+                  name: redis-addr
+                  key: addr
+            - name: ENQUEUE_URL
+              value: ""
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-creds
+                  key: token
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orchestrator
+  namespace: agents-dev
+spec:
+  selector:
+    app: agent-orchestrator
+  ports:
+    - port: 8081
+      targetPort: 8081
