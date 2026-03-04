@@ -1,0 +1,7 @@
+go 1.20
+
+use (
+	./services/orchestrator
+	./services/provider-manager
+	./services/worker
+)

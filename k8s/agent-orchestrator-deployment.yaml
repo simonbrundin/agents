@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-orchestrator
+  namespace: agents-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent-orchestrator
+  template:
+    metadata:
+      labels:
+        app: agent-orchestrator
+    spec:
+      serviceAccountName: agent-orchestrator-sa
+      containers:
+        - name: orchestrator
+          image: ghcr.io/simonbrundin/agents/orchestrator:dev
+          env:
+            - name: POSTGRES_URL
+              value: "POSTGRES_URL_PLACEHOLDER"
+            - name: REDIS_URL
+              value: "REDIS_URL_PLACEHOLDER"
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-creds
+                  key: token

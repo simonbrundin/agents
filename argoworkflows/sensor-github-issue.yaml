@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: github-issue-sensor
+  namespace: argo-events
+spec:
+  template:
+    serviceAccountName: argo-workflow
+  dependencies:
+    - name: issue
+      eventSourceName: github
+      eventName: with-api-credentials
+      filters:
+        data:
+          - path: headers.X-Github-Event
+            type: string
+            value: ["issues"]
+          - path: body.repository.full_name
+            type: string
+            value: ["simonbrundin/agents"]
+  triggers:
+    - template:
+        name: create-agent-job
+        argoWorkflow:
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: agent-job-
+                namespace: argo-events
+              spec:
+                entrypoint: entrypoint
+                arguments:
+                  parameters:
+                    - name: issue-number
+                      value: ""
+                    - name: repo-url
+                      value: "github.com/simonbrundin/agents.git"
+                templates:
+                  - name: entrypoint
+                    dag:
+                      tasks:
+                        - name: create-job
+                          templateRef:
+                            name: agent-workflow-template
+                            template: create-job
+                            clusterScope: true
+          
