@@ -23,8 +23,14 @@ func callOpenRouterRaw(ctx context.Context, prompt string, model string) (string
 		"model":    model,
 		"messages": []map[string]string{{"role": "user", "content": prompt}},
 	}
-	b, _ := json.Marshal(body)
-	req, _ := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(b))
+	b, err := json.Marshal(body)
+	if err != nil {
+		return "", err
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(b))
+	if err != nil {
+		return "", err
+	}
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -34,7 +40,10 @@ func callOpenRouterRaw(ctx context.Context, prompt string, model string) (string
 		return "", err
 	}
 	defer res.Body.Close()
-	respBody, _ := io.ReadAll(res.Body)
+	respBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
 	// Try to parse OpenRouter JSON and return the first choice content.
 	if txt, err := extractOpenRouterText(respBody); err == nil && txt != "" {
 		return txt, nil

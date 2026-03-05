@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -14,7 +15,7 @@ func main() {
 		w.Write([]byte("ok"))
 	})
 
-	http.HandleFunc("/webhook/github", githubWebhook)
+	http.HandleFunc("/webhook/github", handleGithubWebhook)
 
 	addr := ":8081"
 	log.Println("orchestrator listening on", addr)
@@ -33,9 +34,14 @@ type IssueEvent struct {
 	} `json:"repository"`
 }
 
-func githubWebhook(w http.ResponseWriter, r *http.Request) {
-	// Basic verification skipped for MVP (TODO: verify signature)
-	body, _ := io.ReadAll(r.Body)
+func handleGithubWebhook(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Println("failed to read webhook body", err)
+		w.WriteHeader(400)
+		return
+	}
+
 	var ev IssueEvent
 	if err := json.Unmarshal(body, &ev); err != nil {
 		log.Println("invalid webhook payload", err)
@@ -45,8 +51,6 @@ func githubWebhook(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("received issue event: %s #%d", ev.Repository.FullName, ev.Issue.Number)
 
-	// For now, enqueue a simple job file to Redis via redis-cli (placeholder)
-	// In production use Redis client to push to stream
 	redisURL := os.Getenv("REDIS_URL")
 	if redisURL == "" {
 		log.Println("REDIS_URL not set, skipping enqueue (dev mode)")
@@ -54,18 +58,31 @@ func githubWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Enqueue job to Redis stream using pushJob helper
 	enqueueURL := os.Getenv("ENQUEUE_URL")
 	if enqueueURL != "" {
-		// If ENQUEUE_URL is provided, call it (useful for test/mocks)
 		payload := map[string]interface{}{"repo": ev.Repository.FullName, "issue": ev.Issue}
-		b, _ := json.Marshal(payload)
-		http.Post(enqueueURL, "application/json", bytes.NewReader(b))
+		b, err := json.Marshal(payload)
+		if err != nil {
+			log.Println("failed to marshal payload", err)
+			w.WriteHeader(500)
+			return
+		}
+		resp, err := http.Post(enqueueURL, "application/json", bytes.NewReader(b))
+		if err != nil {
+			log.Println("failed to enqueue job", err)
+			w.WriteHeader(500)
+			return
+		}
+		defer resp.Body.Close()
 	} else {
-		// Fallback to direct Redis push (REDIS_ADDR env var)
 		payload := map[string]interface{}{"repo": ev.Repository.FullName, "issue": ev.Issue.Number}
-		p, _ := json.Marshal(payload)
-		if err := pushJob(r.Context(), string(p)); err != nil {
+		p, err := json.Marshal(payload)
+		if err != nil {
+			log.Println("failed to marshal payload", err)
+			w.WriteHeader(500)
+			return
+		}
+		if err := pushJob(context.Background(), string(p)); err != nil {
 			log.Printf("failed to push job to redis: %v", err)
 		}
 	}

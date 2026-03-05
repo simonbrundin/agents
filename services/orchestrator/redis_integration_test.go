@@ -26,7 +26,7 @@ func TestGithubWebhook_Enqueue(t *testing.T) {
 	payload := `{"action":"opened","issue":{"number":42,"title":"Test","body":"hi"},"repository":{"full_name":"simonbrundin/agents"}}`
 	req := httptest.NewRequest("POST", "/webhook/github", strings.NewReader(payload))
 	w := httptest.NewRecorder()
-	githubWebhook(w, req)
+	handleGithubWebhook(w, req)
 
 	res := w.Result()
 	if res.StatusCode != http.StatusOK {
