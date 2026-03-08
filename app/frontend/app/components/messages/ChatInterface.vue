@@ -117,7 +117,7 @@ async function onSubmit() {
 
 <template>
   <UDashboardPanel id="chat">
-    <UDashboardNavbar :title="conversation.participant.name" :toggle="false">
+    <UDashboardNavbar :title="conversation.title" :toggle="false">
       <template #leading>
         <UButton
           icon="i-lucide-x"
@@ -154,13 +154,13 @@ async function onSubmit() {
     <div class="flex items-center gap-4 p-4 sm:px-6 border-b border-default">
       <UAvatar
         v-bind="conversation.participant.avatar"
-        :alt="conversation.participant.name"
+        :alt="conversation.title"
         size="lg"
       />
 
       <div class="min-w-0">
         <p class="font-semibold text-highlighted">
-          {{ conversation.participant.name }}
+          {{ conversation.title }}
         </p>
         <p class="text-muted text-sm">
           {{ conversation.participant.email }}

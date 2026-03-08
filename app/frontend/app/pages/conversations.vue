@@ -115,6 +115,7 @@ interface HasuraConversation {
   id: number
   name: string | null
   repo_url: string | null
+  title: string
   messages: {
     id: number
     message: string
@@ -141,9 +142,9 @@ async function createConversation() {
   const userId = 1
   
   const mutation = `
-    mutation CreateConversation($name: String!, $userId: Int!) {
+    mutation CreateConversation($title: String!, $userId: Int!) {
       insert_conversations_one(object: { 
-        name: $name,
+        title: $title,
         messages: {
           data: {
             message: "Hello! Start your new conversation."
@@ -152,7 +153,7 @@ async function createConversation() {
         }
       }) {
         id
-        name
+        title
       }
     }
   `
@@ -163,11 +164,11 @@ async function createConversation() {
   try {
     isCreatingConversation.value = true
     
-    const response = await $fetch<{ data: { insert_conversations_one: { id: number; name: string } } }>(`${hasuraUrl}/v1/graphql`, {
+    const response = await $fetch<{ data: { insert_conversations_one: { id: number; title: string } } }>(`${hasuraUrl}/v1/graphql`, {
       method: 'POST',
       body: { 
         query: mutation, 
-        variables: { name: newConversationName.value || `Conversation ${Date.now()}`, userId } 
+        variables: { title: newConversationName.value || `Conversation ${Date.now()}`, userId } 
       },
       headers: {
         'Content-Type': 'application/json',
@@ -178,7 +179,7 @@ async function createConversation() {
     if (response.data?.insert_conversations_one) {
       toast.add({
         title: 'Conversation created',
-        description: `Created "${response.data.insert_conversations_one.name}"`,
+        description: `Created "${response.data.insert_conversations_one.title}"`,
         color: 'success'
       })
       
@@ -243,6 +244,7 @@ onMounted(async () => {
         id
         name
         repo_url
+        title
         messages(order_by: { time: asc }) {
           id
           message
@@ -304,6 +306,7 @@ const conversations = computed<Conversation[]>(() => {
     
     return {
       id: conv.id,
+      title: conv.title,
       participant,
       messages,
       unreadCount: 0,
@@ -397,7 +400,7 @@ onMounted(async () => {
     <UModal v-model:open="isNewConversationDialogOpen" title="New Conversation">
       <template #body>
         <div class="space-y-4">
-          <UFormField label="Conversation name (optional)">
+          <UFormField label="Title">
             <UInput v-model="newConversationName" placeholder="My new conversation" @keyup.enter="createConversation" />
           </UFormField>
           <div class="flex justify-end gap-2">

@@ -6,10 +6,10 @@ INSERT INTO users (email, hashed_password, first_name, last_name) VALUES
   ('john.doe@example.com', '$2b$12$dummyhashfordev', 'John', 'Doe'),
   ('jane.smith@example.com', '$2b$12$dummyhashfordev', 'Jane', 'Smith');
 
-INSERT INTO conversations (name, repo_url) VALUES
-  ('Frontend Development', 'https://github.com/example/frontend'),
-  ('Backend API', 'https://github.com/example/backend'),
-  ('DevOps Setup', 'https://github.com/example/devops');
+INSERT INTO conversations (name, repo_url, title) VALUES
+  ('Frontend Development', 'https://github.com/example/frontend', 'Frontend-projekt'),
+  ('Backend API', 'https://github.com/example/backend', 'API-utveckling'),
+  ('DevOps Setup', 'https://github.com/example/devops', 'CI/CD pipeline');
 
 INSERT INTO messages (conversation_id, user_id, message) VALUES
   (1, 1, 'Hej, jag behöver hjälp med att sätta upp Nuxt-projektet'),

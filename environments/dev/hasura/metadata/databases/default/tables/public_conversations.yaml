@@ -1,3 +1,14 @@
 - table:
     schema: public
     name: conversations
+  configuration:
+    column_config:
+      title:
+        custom_name: title
+        comment: null
+    query_config: null
+    insert_config: null
+    update_config: null
+  object_relationships: []
+  array_relationships: []
+  computed_fields: []

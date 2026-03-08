@@ -68,10 +68,10 @@ function getLastMessage(conversation: Conversation) {
           <div class="flex items-center gap-3">
             <UAvatar
               v-bind="conversation.participant.avatar"
-              :alt="conversation.participant.name"
+              :alt="conversation.title"
               size="sm"
             />
-            {{ conversation.participant.name }}
+            {{ conversation.title }}
 
             <UChip v-if="conversation.unreadCount > 0" />
           </div>

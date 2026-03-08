@@ -30,6 +30,7 @@ export interface Message {
 
 export interface Conversation {
   id: number
+  title: string
   participant: User
   messages: Message[]
   unreadCount: number
