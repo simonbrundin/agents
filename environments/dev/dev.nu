@@ -1,5 +1,6 @@
 #!/usr/bin/env nu
-cd environments/dev
+cd /home/simon/repos/software-agent/environments/dev
+
 # -----------------------------------------------
 # Aktivera Mise-paket
 # -----------------------------------------------
@@ -26,6 +27,41 @@ def get-local-ip [] {
     } catch {
         "127.0.0.1"
     }
+}
+
+# -----------------------------------------------
+# Schema Sync - Håll dev-databas i synk med schema.sql
+# -----------------------------------------------
+
+def get-schema-hash [file: string] {
+    ^sha256sum $file | str trim | split row " " | get 0
+}
+
+let schema_file = "/home/simon/repos/software-agent/environments/prod/db/schema.sql"
+let schema_hash_file = "/home/simon/repos/software-agent/environments/dev/.schema.hash"
+
+let current_hash = (get-schema-hash $schema_file)
+let saved_hash = try { (open $schema_hash_file | str trim) } catch { "" }
+
+if $current_hash != $saved_hash {
+    print "Schema ändrat - synkar med schema.sql..."
+
+    try {
+        docker exec software-agent-dev-postgres psql -U postgres -d software_agent -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+        docker exec software-agent-dev-postgres psql -U postgres -d software_agent -f /docker-entrypoint-initdb.d/01-schema.sql
+        docker exec software-agent-dev-postgres psql -U postgres -d software_agent -f /docker-entrypoint-initdb.d/02-mock-data.sql
+    } catch {
+        print "Kör docker compose up -d postgres först för att initiera databasen"
+    }
+
+    try {
+        hasura metadata apply --endpoint http://localhost:8080 --admin-secret hasura-dev-secret
+    } catch {
+        print "Kör hasura först (kör dev igen efter att tilt startat)"
+    }
+
+    $current_hash | save -f $schema_hash_file
+    print "Schema synkat!"
 }
 
 # -----------------------------------------------

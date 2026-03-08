@@ -10,11 +10,31 @@ services:
       POSTGRES_DB: software_agent
     volumes:
       - software-agent-postgres-data:/var/lib/postgresql/data
+      - /home/simon/repos/software-agent/environments/prod/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - /home/simon/repos/software-agent/environments/dev/db/mock-data.sql:/docker-entrypoint-initdb.d/02-mock-data.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d software_agent"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+  hasura:
+    image: hasura/graphql-engine:v2.40.0
+    container_name: software-agent-dev-hasura
+    ports:
+      - "8080:8080"
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgres@postgres:5432/software_agent
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup,http-log,webhook-log,websocket-log,query-log
+      HASURA_GRAPHQL_ADMIN_SECRET: hasura-dev-secret
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: anon
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - /home/simon/repos/software-agent/environments/dev/hasura/metadata:/hasura-metadata
 
   backend:
     build:
@@ -38,7 +58,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: software-agent-dev-frontend
     environment:
-      - NUXT_PUBLIC_API_BASE=http://localhost:8000
+      - NUXT_PUBLIC_API_BASE=http://backend:8000
     volumes:
       - /home/simon/repos/software-agent/app/frontend:/app
       - /app/node_modules

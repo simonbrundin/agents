@@ -50,3 +50,14 @@ local_resource(
   labels=['Database'],
   resource_deps=['postgres'],
 )
+
+# ------------------------------------------------------------------
+# Drizzle Schema Sync (sync schema to database)
+# ------------------------------------------------------------------
+
+local_resource(
+  'Drizzle Schema Sync',
+  cmd='bun run --cwd /home/simon/repos/software-agent/app/frontend db:push',
+  labels=['Database'],
+  resource_deps=['postgres'],
+)
