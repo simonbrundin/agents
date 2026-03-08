@@ -17,10 +17,9 @@ const links = [
       },
     },
     {
-      label: "Messages",
+      label: "Conversations",
       icon: "i-lucide-message-circle",
-      to: "/messages",
-      badge: "4",
+      to: "/conversations",
       onSelect: () => {
         open.value = false;
       },

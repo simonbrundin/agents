@@ -1,17 +1,27 @@
-import { pgTable, serial, text, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, timestamp, integer } from 'drizzle-orm/pg-core';
 
-export const users = pgTable('users', {
+export const user = pgTable('users', {
   id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  createdAt: timestamp('created_at').defaultNow(),
+  email: varchar('email', { length: 40 }).notNull().unique(),
+  firstName: varchar('first_name', { length: 16 }),
+  lastName: varchar('last_name', { length: 40 }),
+  created: timestamp('created', { withTimezone: true, mode: 'timestamp' }).defaultNow().notNull(),
 });
 
-export const tasks = pgTable('tasks', {
+export const conversation = pgTable('conversations', {
   id: serial('id').primaryKey(),
-  title: text('title').notNull(),
-  description: text('description'),
-  completed: boolean('completed').default(false),
-  userId: integer('user_id').references(() => users.id),
-  createdAt: timestamp('created_at').defaultNow(),
+  userId: integer('user_id').references(() => user.id).notNull(),
+  name: text('name'),
+  repoUrl: text('repo_url'),
 });
+
+export const message = pgTable('messages', {
+  id: serial('id').primaryKey(),
+  conversationId: integer('conversation_id').references(() => conversation.id).notNull(),
+  message: text('message').notNull(),
+  time: timestamp('time', { withTimezone: true, mode: 'timestamp' }).defaultNow().notNull(),
+});
+
+export type User = typeof user.$inferSelect;
+export type Conversation = typeof conversation.$inferSelect;
+export type Message = typeof message.$inferSelect;

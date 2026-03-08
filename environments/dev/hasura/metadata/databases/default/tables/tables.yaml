@@ -1,0 +1,12 @@
+- table:
+    schema: public
+    name: users
+  is_enum: false
+- table:
+    schema: public
+    name: conversations
+  is_enum: false
+- table:
+    schema: public
+    name: messages
+  is_enum: false

@@ -261,8 +261,19 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_password = get_password_hash(user.password)
+
+    first_name = None
+    last_name = None
+    if user.full_name:
+        name_parts = user.full_name.split(" ", 1)
+        first_name = name_parts[0]
+        last_name = name_parts[1] if len(name_parts) > 1 else None
+
     db_user = User(
-        email=user.email, hashed_password=hashed_password, full_name=user.full_name
+        email=user.email,
+        hashed_password=hashed_password,
+        first_name=first_name,
+        last_name=last_name,
     )
     db.add(db_user)
     await db.commit()
@@ -287,6 +298,11 @@ async def login(
         data={"sub": user.email}, expires_delta=timedelta(minutes=30)
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.get("/api/auth/me", response_model=UserResponse)
+async def get_user_info(current_user: User = Depends(get_current_user)):
+    return current_user
 
 
 @app.post(

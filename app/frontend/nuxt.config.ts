@@ -4,8 +4,31 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/ui',
     '@vueuse/nuxt',
-    '@nuxt/icon'
+    '@nuxt/icon',
+    'nuxt-auth-utils'
   ],
+
+  runtimeConfig: {
+    hasuraUrl: process.env.HASURA_URL || 'http://localhost:8080',
+    hasuraAdminSecret: process.env.HASURA_ADMIN_SECRET || 'hasura-dev-secret',
+    oauth: {
+      github: {}
+    },
+    session: {
+      maxAge: 60 * 60 * 24 * 7,
+      name: 'nuxt-session',
+      cookie: {
+        sameSite: 'lax',
+        secure: false,
+        httpOnly: true,
+        path: '/'
+      }
+    }
+  },
+
+  auth: {
+    origin: process.env.NUXT_AUTH_ORIGIN || 'http://localhost:3000'
+  },
 
   devtools: {
     enabled: true
@@ -16,15 +39,9 @@ export default defineNuxtConfig({
   routeRules: {
     '/api/**': {
       cors: true
-    }
-  },
-
-  nitro: {
-    proxy: {
-      '/api/conversations': {
-        target: 'http://localhost:8000',
-        changeOrigin: true
-      }
+    },
+    '/v1/graphql': {
+      cors: true
     }
   },
 

@@ -12,7 +12,8 @@ class UserCreate(BaseModel):
 class UserResponse(BaseModel):
     id: int
     email: str
-    full_name: Optional[str]
+    first_name: Optional[str]
+    last_name: Optional[str]
     is_active: bool
     created_at: datetime
 

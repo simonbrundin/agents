@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
-import type { Conversation, Message } from '~/types'
+import type { Conversation, Message, User } from '~/types'
 
 const route = useRoute()
 const toast = useToast()
+const { user } = useUserSession()
 
 const open = ref(false)
 
@@ -18,10 +19,9 @@ const links = [
       }
     },
     {
-      label: 'Messages',
+      label: 'Conversations',
       icon: 'i-lucide-message-circle',
-      to: '/messages',
-      badge: '4',
+      to: '/conversations',
       onSelect: () => {
         open.value = false
       }
@@ -110,7 +110,102 @@ const groups = computed(() => [
   }
 ])
 
-const { data: conversations } = await useFetch<Conversation[]>('/api/conversations')
+interface HasuraConversation {
+  id: number
+  name: string | null
+  repo_url: string | null
+  messages: {
+    id: number
+    message: string
+    time: string
+    user: {
+      id: number
+      email: string
+      first_name: string | null
+      last_name: string | null
+    }
+  }[]
+}
+
+const config = useRuntimeConfig()
+
+const { data: hasuraData } = await useAsyncData<HasuraConversation[]>('conversations', async () => {
+  const userId = user.value?.id
+  
+  const query = `
+    query GetConversations($userId: Int!) {
+      conversations(
+        where: { 
+          _exists: {
+            table: messages
+            where: { user_id: { eq: $userId } }
+          }
+        }
+        order_by: { id: asc }
+      ) {
+        id
+        name
+        repo_url
+        messages(order_by: { time: asc }) {
+          id
+          message
+          time
+          user {
+            id
+            email
+            first_name
+            last_name
+          }
+        }
+      }
+    }
+  `
+  const response = await $fetch<{ data: { conversations: HasuraConversation[] } }>(`${config.hasuraUrl}/v1/graphql`, {
+    method: 'POST',
+    body: { query, variables: { userId } },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-hasura-admin-secret': config.hasuraAdminSecret
+    }
+  })
+  return response.data.conversations
+})
+
+const conversations = computed<Conversation[]>(() => {
+  if (!hasuraData.value) return []
+  
+  return hasuraData.value.map((conv: HasuraConversation): Conversation => {
+    const firstMessage = conv.messages[0]
+    const msgUser = firstMessage?.user
+    const participant: User = {
+      id: msgUser?.id || 0,
+      name: msgUser?.first_name && msgUser?.last_name 
+        ? `${msgUser.first_name} ${msgUser.last_name}` 
+        : msgUser?.email || '',
+      email: msgUser?.email || '',
+      avatar: { src: `https://i.pravatar.cc/128?u=${msgUser?.id}` },
+      status: 'subscribed',
+      location: ''
+    }
+
+    const messages: Message[] = conv.messages.map((msg, idx): Message => ({
+      id: msg.id,
+      body: msg.message,
+      date: msg.time,
+      isOwn: idx % 2 === 1
+    }))
+
+    const lastMsg = conv.messages[conv.messages.length - 1]
+    
+    return {
+      id: conv.id,
+      participant,
+      messages,
+      unreadCount: 0,
+      lastMessageAt: lastMsg?.time || ''
+    }
+  })
+})
 
 const selectedConversation = defineModel<Conversation | null>()
 
@@ -146,39 +241,18 @@ onMounted(async () => {
 
 <template>
   <UDashboardGroup unit="rem">
-    <UDashboardSidebar
-      id="default"
-      v-model:open="open"
-      collapsible
-      resizable
-      class="bg-elevated/25"
-      :ui="{ footer: 'lg:border-t lg:border-default' }"
-    >
+    <UDashboardSidebar id="default" v-model:open="open" collapsible resizable class="bg-elevated/25"
+      :ui="{ footer: 'lg:border-t lg:border-default' }">
       <template #header="{ collapsed }">
         <TeamsMenu :collapsed="collapsed" />
       </template>
 
       <template #default="{ collapsed }">
-        <UDashboardSearchButton
-          :collapsed="collapsed"
-          class="bg-transparent ring-default"
-        />
+        <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 
-        <UNavigationMenu
-          :collapsed="collapsed"
-          :items="links[0]"
-          orientation="vertical"
-          tooltip
-          popover
-        />
+        <UNavigationMenu :collapsed="collapsed" :items="links[0]" orientation="vertical" tooltip popover />
 
-        <UNavigationMenu
-          :collapsed="collapsed"
-          :items="links[1]"
-          orientation="vertical"
-          tooltip
-          class="mt-auto"
-        />
+        <UNavigationMenu :collapsed="collapsed" :items="links[1]" orientation="vertical" tooltip class="mt-auto" />
       </template>
 
       <template #footer="{ collapsed }">
@@ -189,32 +263,19 @@ onMounted(async () => {
     <UDashboardSearch :groups="groups" />
 
     <div class="flex h-full w-full overflow-hidden">
-      <UDashboardPanel
-        id="conversations"
-        side="left"
-        resizable
-        class="w-full sm:w-80 lg:w-96 shrink-0"
-      >
-        <UDashboardNavbar title="Messages">
+      <UDashboardPanel id="conversations" side="left" resizable class="w-full sm:w-80 lg:w-96 shrink-0">
+        <UDashboardNavbar title="Conversations">
           <template #right>
             <UButton icon="i-lucide-pen-square" color="neutral" variant="ghost" />
           </template>
         </UDashboardNavbar>
 
-        <MessagesConversationList
-          v-if="conversations"
-          v-model="selectedConversation"
-          :conversations="conversations"
-        />
+        <MessagesConversationList v-if="conversations" v-model="selectedConversation" :conversations="conversations" />
       </UDashboardPanel>
 
-      <MessagesChatInterface
-        v-if="selectedConversation"
-        :conversation="selectedConversation"
-        class="flex-1"
+      <MessagesChatInterface v-if="selectedConversation" :conversation="selectedConversation" class="flex-1"
         @close="selectedConversation = null"
-        @send-message="(msg: Message) => selectedConversation?.messages.push(msg)"
-      />
+        @send-message="(msg: Message) => selectedConversation?.messages.push(msg)" />
 
       <div v-else class="flex-1 flex items-center justify-center">
         <div class="text-center">
