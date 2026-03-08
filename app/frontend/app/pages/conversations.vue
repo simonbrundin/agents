@@ -131,6 +131,35 @@ interface HasuraConversation {
 const config = useRuntimeConfig()
 
 const hasuraData = ref<HasuraConversation[]>([])
+const refreshKey = ref(0)
+
+function handleNewMessage(msg: Message) {
+  if (!selectedConversation.value) return
+  
+  // Använd Object.assign för att mutera objektet
+  Object.assign(selectedConversation.value, {
+    messages: [...selectedConversation.value.messages, msg]
+  })
+  
+  const conv = hasuraData.value?.find(c => c.id === selectedConversation.value?.id)
+  if (conv) {
+    Object.assign(conv, {
+      messages: [...conv.messages, {
+        id: msg.id,
+        message: msg.body,
+        time: msg.date,
+        user: {
+          id: user.value?.id || 1,
+          email: user.value?.email || 'dev@example.com',
+          first_name: user.value?.firstName || null,
+          last_name: user.value?.lastName || null
+        }
+      }]
+    })
+  }
+  
+  refreshKey.value++
+}
 
 onMounted(async () => {
   console.log('=== ONMOUNTED CALLED ===')
@@ -199,11 +228,11 @@ const conversations = computed<Conversation[]>(() => {
       location: ''
     }
 
-    const messages: Message[] = conv.messages.map((msg, idx): Message => ({
+    const messages: Message[] = conv.messages.map((msg): Message => ({
       id: msg.id,
       body: msg.message,
       date: msg.time,
-      isOwn: idx % 2 === 1
+      isOwn: msg.user.id === user.value?.id
     }))
 
     const lastMsg = conv.messages[conv.messages.length - 1]
@@ -284,9 +313,11 @@ onMounted(async () => {
         <MessagesConversationList v-if="conversations" v-model="selectedConversation" :conversations="conversations" />
       </UDashboardPanel>
 
-      <MessagesChatInterface v-if="selectedConversation" :conversation="selectedConversation" class="flex-1"
+      <MessagesChatInterface v-if="selectedConversation" :key="refreshKey" :conversation="selectedConversation" :user-id="user?.id" class="flex-1"
         @close="selectedConversation = null"
-        @send-message="(msg: Message) => selectedConversation?.messages.push(msg)" />
+        @send-message="(msg: Message) => { 
+          handleNewMessage(msg)
+        }" />
 
       <div v-else class="flex-1 flex items-center justify-center">
         <div class="text-center">

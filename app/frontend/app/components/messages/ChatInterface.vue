@@ -4,15 +4,19 @@ import type { Conversation, Message } from '~/types'
 
 const props = defineProps<{
   conversation: Conversation
+  userId?: number
 }>()
 
 const emits = defineEmits(['close', 'send-message'])
 
+const config = useRuntimeConfig()
+const toast = useToast()
+
+const userId = props.userId || 1
+
 const messagesContainer = ref<HTMLElement | null>(null)
 const newMessage = ref('')
 const loading = ref(false)
-
-const toast = useToast()
 
 onMounted(() => {
   scrollToBottom()
@@ -38,12 +42,56 @@ function formatMessageTime(date: string) {
   return format(d, 'dd MMM HH:mm')
 }
 
-function onSubmit() {
+async function onSubmit() {
   if (!newMessage.value.trim()) return
 
   loading.value = true
 
-  setTimeout(() => {
+  const mutation = `
+    mutation InsertMessage($conversationId: Int!, $userId: Int!, $message: String!) {
+      insert_messages_one(object: {
+        conversation_id: $conversationId,
+        user_id: $userId,
+        message: $message
+      }) {
+        id
+        message
+        time
+      }
+    }
+  `
+
+  const hasuraUrl = 'http://localhost:8080'
+  const hasuraSecret = 'hasura-dev-secret'
+
+  console.log('Config hasuraUrl:', config.public.hasuraUrl)
+  console.log('Config hasuraAdminSecret:', config.public.hasuraAdminSecret)
+  console.log('Using hasuraUrl:', hasuraUrl)
+  console.log('Conversation ID:', props.conversation.id)
+  console.log('User ID:', userId)
+
+  try {
+    console.log('Making fetch to:', `${hasuraUrl}/v1/graphql`)
+    const res = await fetch(`${hasuraUrl}/v1/graphql`, {
+      method: 'POST',
+      body: JSON.stringify({
+        query: mutation,
+        variables: {
+          conversationId: props.conversation.id,
+          userId,
+          message: newMessage.value
+        }
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-hasura-admin-secret': hasuraSecret,
+        'Origin': 'http://localhost:3000'
+      }
+    })
+    const response = await res.json()
+    console.log('Response status:', res.status)
+    console.log('Response:', response)
+
     const newMsg: Message = {
       id: props.conversation.messages.length + 1,
       body: newMessage.value,
@@ -60,9 +108,17 @@ function onSubmit() {
       icon: 'i-lucide-check-circle',
       color: 'success'
     })
-
+  } catch (err) {
+    console.error('Failed to send message:', err)
+    toast.add({
+      title: 'Failed to send message',
+      description: 'Please try again',
+      icon: 'i-lucide-x-circle',
+      color: 'error'
+    })
+  } finally {
     loading.value = false
-  }, 500)
+  }
 }
 </script>
 

@@ -30,6 +30,7 @@ services:
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup,http-log,webhook-log,websocket-log,query-log
       HASURA_GRAPHQL_ADMIN_SECRET: hasura-dev-secret
       HASURA_GRAPHQL_UNAUTHORIZED_ROLE: anon
+      HASURA_GRAPHQL_CORS_DOMAIN: "http://localhost:3000"
     depends_on:
       postgres:
         condition: service_healthy
