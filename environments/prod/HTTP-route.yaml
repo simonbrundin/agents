@@ -1,0 +1,27 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: software-agent-route
+  namespace: software-agent
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: simons-gateway
+      namespace: envoy
+  hostnames:
+    - "software-agent.simonbrundin.com"
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: software-agent-service
+          port: 80
+          weight: 1
+          namespace: software-agent
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+      timeouts:
+        request: 30s

@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - db.yaml
+  - password-generator.yaml
+  - push-secret.yaml
+  - schema.yaml
+  - admin-secret.yaml
+  - user-secret.yaml
+  - grant-job.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: atlas-schema
+    files:
+      - schema.sql

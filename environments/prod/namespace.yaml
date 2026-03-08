@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: software-agent
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+

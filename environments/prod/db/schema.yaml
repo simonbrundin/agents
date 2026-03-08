@@ -1,0 +1,15 @@
+apiVersion: db.atlasgo.io/v1alpha1
+kind: AtlasSchema
+metadata:
+  name: atlasschema-software-agent
+spec:
+  urlFrom:
+    secretKeyRef:
+      key: uri
+      name: software-agent-db-admin
+  schema:
+    configMapKeyRef:
+      key: schema.sql
+      name: atlas-schema
+  schemas:
+    - "public"

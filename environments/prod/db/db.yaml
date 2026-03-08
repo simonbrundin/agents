@@ -1,0 +1,37 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: software-agent-db
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+spec:
+  instances: 3
+
+  bootstrap:
+    initdb:
+      database: software-agent
+      owner: admin
+      postInitApplicationSQL:
+        - CREATE ROLE "user" LOGIN;
+        - GRANT CREATE ON DATABASE software-agent TO "user";
+
+  storage:
+    storageClass: cnpg
+    size: 2Gi
+    resizeInUseVolumes: true
+  monitoring:
+    enablePodMonitor: true
+
+  managed:
+    roles:
+      - name: admin
+        ensure: present
+        login: true
+        superuser: true
+        passwordSecret:
+          name: software-agent-db-admin
+      - name: user
+        ensure: present
+        login: true
+        passwordSecret:
+          name: software-agent-db-user
