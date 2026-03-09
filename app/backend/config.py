@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     github_webhook_secret: str = "github-webhook-secret"
+    hasura_url: str = "http://localhost:8080/v1/graphql"
+    hasura_admin_secret: str = "hasura-dev-secret"
 
     class Config:
         env_file = ".env"

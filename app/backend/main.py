@@ -5,6 +5,7 @@ from datetime import timedelta
 from typing import List
 
 import asyncpg
+import httpx
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from fastapi import FastAPI, Depends, HTTPException, status, Request
@@ -27,6 +28,8 @@ from schemas import (
     MessageCreate,
     MessageResponse,
     GitHubWebhookPayload,
+    AgentMessageCreate,
+    AgentMessageResponse,
 )
 from auth import (
     get_password_hash,
@@ -331,6 +334,62 @@ async def get_messages(
     )
     messages = result.scalars().all()
     return messages
+
+
+@app.post(
+    "/api/agent/message",
+    response_model=AgentMessageResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def agent_message(
+    agent_message: AgentMessageCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    settings = get_settings()
+
+    mutation = """
+        mutation InsertMessage($conversationId: Int!, $userId: Int!, $message: String!) {
+            insert_messages_one(object: {
+                conversation_id: $conversationId,
+                user_id: $userId,
+                message: $message
+            }) {
+                id
+            }
+        }
+    """
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            settings.hasura_url,
+            json={
+                "query": mutation,
+                "variables": {
+                    "conversationId": agent_message.conversation_id,
+                    "userId": current_user.id,
+                    "message": agent_message.message,
+                },
+            },
+            headers={
+                "x-hasura-admin-secret": settings.hasura_admin_secret,
+                "Content-Type": "application/json",
+            },
+        )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=500, detail="Failed to insert message in Hasura"
+            )
+
+        result = response.json()
+
+        if "errors" in result:
+            raise HTTPException(status_code=500, detail=result["errors"])
+
+        message_id = result["data"]["insert_messages_one"]["id"]
+
+    return {"status": "mottaget", "message_id": message_id}
 
 
 def verify_github_signature(payload: bytes, signature: str) -> bool:

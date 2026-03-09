@@ -8,9 +8,6 @@ from sqlalchemy import (
     ForeignKey,
     Enum,
 )
-from sqlalchemy.orm import DeclarativeBase, relationship
-from sqlalchemy.sql import func
-import enum
 
 
 class Base(DeclarativeBase):
@@ -31,16 +28,30 @@ class User(Base):
     messages = relationship("Message", back_populates="user")
 
 
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=True)
+    repo_url = Column(Text, nullable=True)
+    title = Column(String(255), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    messages = relationship("Message", back_populates="conversation")
+
+
 class Message(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
     body = Column(Text, nullable=False)
     is_own = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="messages")
+    conversation = relationship("Conversation", back_populates="messages")
 
 
 class GitHubEventType(str, enum.Enum):

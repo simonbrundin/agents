@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     formData.append('username', email)
     formData.append('password', password)
 
-    const tokenResponse = await $fetch<{ access_token: string; token_type: string }>(`${backendUrl}/api/auth/login`, {
+    const tokenResponse = await $fetch<{ access_token: string, token_type: string }>(`${backendUrl}/api/auth/login`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    const userResponse = await $fetch<{ id: number; email: string; first_name: string | null; last_name: string | null }>(`${backendUrl}/api/auth/me`, {
+    const userResponse = await $fetch<{ id: number, email: string, first_name: string | null, last_name: string | null }>(`${backendUrl}/api/auth/me`, {
       headers: {
         Authorization: `Bearer ${tokenResponse.access_token}`
       }

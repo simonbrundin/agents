@@ -22,10 +22,10 @@ const userDisplay = computed(() => {
       }
     }
   }
-  const fullName = user.value.firstName && user.value.lastName 
+  const fullName = user.value.firstName && user.value.lastName
     ? `${user.value.firstName} ${user.value.lastName}`
     : user.value.firstName || user.value.email
-  
+
   return {
     name: fullName,
     avatar: {
@@ -52,7 +52,7 @@ const authItems = computed<DropdownMenuItem[][]>(() => {
       to: '/login'
     }]]
   }
-  
+
   return [[{
     type: 'label',
     label: userDisplay.value.name,

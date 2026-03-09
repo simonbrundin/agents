@@ -8,6 +8,12 @@ export default defineNuxtConfig({
     'nuxt-auth-utils'
   ],
 
+  devtools: {
+    enabled: true
+  },
+
+  css: ['~/assets/css/main.css'],
+
   runtimeConfig: {
     oauth: {
       github: {}
@@ -24,21 +30,6 @@ export default defineNuxtConfig({
     }
   },
 
-  public: {
-    hasuraUrl: process.env.HASURA_URL || 'http://localhost:8080',
-    hasuraAdminSecret: process.env.HASURA_ADMIN_SECRET || 'hasura-dev-secret'
-  },
-
-  auth: {
-    origin: process.env.NUXT_AUTH_ORIGIN || 'http://localhost:3000'
-  },
-
-  devtools: {
-    enabled: true
-  },
-
-  css: ['~/assets/css/main.css'],
-
   routeRules: {
     '/api/**': {
       cors: true
@@ -50,6 +41,10 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2024-07-11',
 
+  auth: {
+    origin: process.env.NUXT_AUTH_ORIGIN || 'http://localhost:3000'
+  },
+
   eslint: {
     config: {
       stylistic: {
@@ -57,5 +52,10 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  public: {
+    hasuraUrl: process.env.HASURA_URL || 'http://localhost:8080',
+    hasuraAdminSecret: process.env.HASURA_ADMIN_SECRET || 'hasura-dev-secret'
   }
 })

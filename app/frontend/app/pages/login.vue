@@ -1,45 +1,45 @@
 <script setup lang="ts">
-const config = useRuntimeConfig();
-const email = ref("");
-const password = ref("");
-const error = ref("");
-const loading = ref(false);
-const devLoading = ref(false);
+const config = useRuntimeConfig()
+const email = ref('')
+const password = ref('')
+const error = ref('')
+const loading = ref(false)
+const devLoading = ref(false)
 
-const isDev = computed(() => process.env.NODE_ENV === "development");
+const isDev = computed(() => process.env.NODE_ENV === 'development')
 
 const handleLogin = async () => {
-  error.value = "";
-  loading.value = true;
+  error.value = ''
+  loading.value = true
 
   try {
-    await $fetch("/api/auth/login", {
-      method: "POST",
-      body: { email: email.value, password: password.value },
-    });
-    navigateTo("/conversations");
+    await $fetch('/api/auth/login', {
+      method: 'POST',
+      body: { email: email.value, password: password.value }
+    })
+    navigateTo('/conversations')
   } catch (e: any) {
-    error.value = e.data?.message || "Login failed";
+    error.value = e.data?.message || 'Login failed'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const handleDevLogin = async () => {
-  error.value = "";
-  devLoading.value = true;
+  error.value = ''
+  devLoading.value = true
 
   try {
-    await $fetch("/api/auth/dev-login", {
-      method: "POST",
-    });
-    navigateTo("/conversations");
+    await $fetch('/api/auth/dev-login', {
+      method: 'POST'
+    })
+    navigateTo('/conversations')
   } catch (e: any) {
-    error.value = e.data?.message || "Dev login failed";
+    error.value = e.data?.message || 'Dev login failed'
   } finally {
-    devLoading.value = false;
+    devLoading.value = false
   }
-};
+}
 </script>
 
 <template>
@@ -48,10 +48,12 @@ const handleDevLogin = async () => {
   >
     <UCard class="w-full max-w-md">
       <template #header>
-        <h1 class="text-xl font-semibold">Sign in</h1>
+        <h1 class="text-xl font-semibold">
+          Sign in
+        </h1>
       </template>
 
-      <form @submit.prevent="handleLogin" class="space-y-4">
+      <form class="space-y-4" @submit.prevent="handleLogin">
         <UFormField label="Email">
           <UInput
             v-model="email"
@@ -76,7 +78,9 @@ const handleDevLogin = async () => {
           {{ error }}
         </UAlert>
 
-        <UButton type="submit" :loading="loading" block> Sign in </UButton>
+        <UButton type="submit" :loading="loading" block>
+          Sign in
+        </UButton>
       </form>
 
       <div

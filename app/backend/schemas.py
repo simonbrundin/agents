@@ -37,12 +37,24 @@ class MessageCreate(BaseModel):
 class MessageResponse(BaseModel):
     id: int
     user_id: int
+    conversation_id: int
     body: str
     is_own: bool
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class AgentMessageCreate(BaseModel):
+    conversation_id: int
+    message: str
+    repo_url: Optional[str] = None
+
+
+class AgentMessageResponse(BaseModel):
+    status: str
+    message_id: int
 
 
 class GitHubWebhookPayload(BaseModel):

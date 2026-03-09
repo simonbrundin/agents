@@ -100,6 +100,19 @@ async function onSubmit() {
     }
 
     emits('send-message', newMsg)
+
+    await $fetch('http://localhost:8000/api/agent/message', {
+      method: 'POST',
+      body: {
+        conversation_id: props.conversation.id,
+        message: newMessage.value,
+        repo_url: null
+      },
+      credentials: 'include'
+    }).catch((err) => {
+      console.error('Failed to send to agent backend:', err)
+    })
+
     newMessage.value = ''
   } catch (err) {
     console.error('Failed to send message:', err)
