@@ -11,7 +11,6 @@ export const user = pgTable('users', {
 export const conversation = pgTable('conversations', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').references(() => user.id).notNull(),
-  name: text('name'),
   repoUrl: text('repo_url')
 })
 
